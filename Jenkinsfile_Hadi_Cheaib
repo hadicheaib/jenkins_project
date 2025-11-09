@@ -7,16 +7,19 @@ pipeline {
 
   stages {
     stage('Setup') {
-      steps {
-        script {
-          if (isUnix()) {
-            sh 'python3 -m venv ${VIRTUAL_ENV} || python -m venv ${VIRTUAL_ENV}'
-            env.PY = "./${VIRTUAL_ENV}/bin/python"
-          } else {
-            bat 'python -m venv %VIRTUAL_ENV%'
-            env.PY = "${WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\python.exe"
-          }
-        }
+    steps {
+        bat """
+        if not exist %VIRTUAL_ENV% (
+            python -m venv %VIRTUAL_ENV%
+        )
+        call %VIRTUAL_ENV%\\Scripts\\activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install coverage bandit
+        """
+    }
+}
+
         script {
           if (isUnix()) {
             sh '${PY} -m pip install --upgrade pip'
