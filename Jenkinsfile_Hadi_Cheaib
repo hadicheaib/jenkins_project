@@ -1,0 +1,108 @@
+pipeline {
+  agent any
+
+  environment {
+    VIRTUAL_ENV = 'venv'
+  }
+
+  stages {
+    stage('Setup') {
+      steps {
+        script {
+          if (isUnix()) {
+            sh 'python3 -m venv ${VIRTUAL_ENV} || python -m venv ${VIRTUAL_ENV}'
+            env.PY = "./${VIRTUAL_ENV}/bin/python"
+          } else {
+            bat 'python -m venv %VIRTUAL_ENV%'
+            env.PY = "${WORKSPACE}\\${VIRTUAL_ENV}\\Scripts\\python.exe"
+          }
+        }
+        script {
+          if (isUnix()) {
+            sh '${PY} -m pip install --upgrade pip'
+            sh '${PY} -m pip install -r requirements.txt'
+          } else {
+            bat '"%PY%" -m pip install --upgrade pip'
+            bat '"%PY%" -m pip install -r requirements.txt'
+          }
+        }
+      }
+    }
+
+    stage('Lint') {
+      steps {
+        script {
+          if (isUnix()) {
+            sh '${PY} -m flake8 app.py tests'
+          } else {
+            bat '"%PY%" -m flake8 app.py tests'
+          }
+        }
+      }
+    }
+
+    stage('Test') {
+      steps {
+        script {
+          if (isUnix()) {
+            sh '${PY} -m pytest -q'
+          } else {
+            bat '"%PY%" -m pytest -q'
+          }
+        }
+      }
+    }
+
+    stage('Coverage') {
+      steps {
+        script {
+          if (isUnix()) {
+            sh '${PY} -m coverage run -m pytest'
+            sh '${PY} -m coverage report'
+            sh '${PY} -m coverage html'
+            sh '${PY} -m coverage xml'
+          } else {
+            bat '"%PY%" -m coverage run -m pytest'
+            bat '"%PY%" -m coverage report'
+            bat '"%PY%" -m coverage html'
+            bat '"%PY%" -m coverage xml'
+          }
+        }
+        archiveArtifacts artifacts: 'htmlcov/**, coverage.xml, .coverage', fingerprint: true, allowEmptyArchive: true
+      }
+    }
+
+    stage('Security Scan') {
+      steps {
+        script {
+          if (isUnix()) {
+            sh '${PY} -m bandit -r . -x ${VIRTUAL_ENV},htmlcov -f json -o bandit-report.json'
+          } else {
+            bat '"%PY%" -m bandit -r . -x %VIRTUAL_ENV%,htmlcov -f json -o bandit-report.json'
+          }
+        }
+        archiveArtifacts artifacts: 'bandit-report.json', fingerprint: true, allowEmptyArchive: true
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        script {
+          if (isUnix()) {
+            sh '${PY} deploy.py'
+          } else {
+            bat '"%PY%" deploy.py'
+          }
+        }
+        archiveArtifacts artifacts: 'deploy/**', fingerprint: true, allowEmptyArchive: true
+      }
+    }
+  }
+
+  post {
+    always {
+      cleanWs()
+    }
+  }
+}
+
