@@ -8,7 +8,7 @@ def main():
     if not Path("app.py").exists():
         print("app.py not found; nothing to deploy.")
         return 0
-    print("Deploy OK ✅")
+    print("Deploy OK ")
     return 0
 
 if __name__ == "__main__":
