@@ -61,13 +61,14 @@ pipeline {
 
 
         stage('Deploy') {
-            steps {
-                bat """
-                call %VIRTUAL_ENV%\\Scripts\\activate
-                python deploy.py
-                """
-            }
-        }
+    steps {
+        bat """
+        call %VIRTUAL_ENV%\\Scripts\\activate
+        "%VIRTUAL_ENV%\\Scripts\\python.exe" deploy.py
+        """
+    }
+}
+
     }
 
     post {
