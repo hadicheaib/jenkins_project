@@ -49,14 +49,15 @@ pipeline {
             }
         }
 
-        stage('Security Scan') {
+               stage('Security Scan') {
             steps {
                 bat """
                 call %VIRTUAL_ENV%\\Scripts\\activate
-                bandit -r . -f json -o bandit-report.json
+                bandit -r . -x venv -f json -o bandit-report.json
                 """
             }
         }
+
 
         stage('Deploy') {
             steps {
